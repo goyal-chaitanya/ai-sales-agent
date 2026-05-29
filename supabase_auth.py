@@ -17,17 +17,32 @@ def _clean_supabase_url(value: str) -> str:
     return url
 
 
+def _secret_value(*names: str) -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+
+    try:
+        import streamlit as st
+
+        for name in names:
+            value = st.secrets.get(name)
+            if value:
+                return str(value)
+    except Exception:
+        pass
+
+    return ""
+
+
 SUPABASE_URL = _clean_supabase_url(
-    os.getenv("SUPABASE_URL")
-    or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-    or ""
+    _secret_value("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL")
 )
 SUPABASE_ANON_KEY = (
-    os.getenv("SUPABASE_ANON_KEY")
-    or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    or ""
+    _secret_value("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY")
 ).strip()
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501")
+APP_BASE_URL = _secret_value("APP_BASE_URL") or "http://localhost:8501"
 
 
 def is_configured() -> bool:
