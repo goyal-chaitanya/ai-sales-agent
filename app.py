@@ -257,29 +257,55 @@ button[kind="secondary"] {
     margin: 18px 0;
 }
 
-.voice-input-card {
-    border: 1px solid rgba(32, 33, 36, 0.10);
-    background: rgba(255, 255, 255, 0.86);
-    border-radius: 8px;
-    padding: 12px 14px 6px;
+.stAudio {
     margin-top: 8px;
 }
 
-.voice-input-title {
+.composer-label {
     color: #17191b;
-    font-size: 0.92rem;
+    font-size: 0.82rem;
     font-weight: 800;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.voice-control {
+    min-height: 78px;
+    border: 1px solid rgba(35, 111, 121, 0.22);
+    background: #eef7f5;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.voice-control-title {
+    color: #153f44;
+    font-size: 0.92rem;
+    font-weight: 850;
     margin-bottom: 2px;
 }
 
-.voice-input-caption {
-    color: #69746e;
+.voice-control-caption {
+    color: #516560;
     font-size: 0.82rem;
-    margin-bottom: 8px;
+    line-height: 1.35;
 }
 
-.stAudio {
+.voice-status-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid rgba(217, 151, 63, 0.26);
+    background: #fff7e8;
+    color: #755016;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
     margin-top: 8px;
+}
+
+iframe[title="audio_recorder_streamlit.audio_recorder"] {
+    min-height: 54px !important;
 }
 
 @media (max-width: 760px) {
@@ -553,7 +579,10 @@ def autoplay_audio(audio_bytes: bytes) -> None:
 
 def render_assistant_audio(audio_bytes: bytes | None, should_autoplay: bool) -> None:
     if not audio_bytes:
-        st.caption("Voice unavailable. Check ELEVENLABS_API_KEY in Streamlit secrets.")
+        st.markdown(
+            '<div class="voice-status-note">Voice not configured yet</div>',
+            unsafe_allow_html=True,
+        )
         return
 
     if should_autoplay:
@@ -793,35 +822,38 @@ def render_brief_and_chat() -> None:
                         render_assistant_audio(msg.get("audio"), msg.get("autoplay", False))
                         msg["autoplay"] = False
 
-        input_col, mic_col = st.columns([4.2, 1.25], vertical_alignment="top")
-        with input_col:
-            st.text_input(
-                "Response",
-                key="user_text_input",
-                on_change=process_text_input,
-                label_visibility="collapsed",
-                placeholder="Type a prospect reply and press Enter...",
-            )
-        with mic_col:
-            st.markdown(
-                """
-                <div class="voice-input-card">
-                    <div class="voice-input-title">Voice reply</div>
-                    <div class="voice-input-caption">Tap, speak, tap again.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            audio_bytes = audio_recorder(
-                text="Record",
-                icon_size="3x",
-                neutral_color="#236f79",
-                recording_color="#e25b4c",
-                energy_threshold=0.003,
-                pause_threshold=1.1,
-                sample_rate=44100,
-                key="voice_reply_recorder",
-            )
+        with st.container(border=True):
+            st.markdown('<div class="composer-label">Reply as the prospect</div>', unsafe_allow_html=True)
+            input_col, mic_col = st.columns([4.6, 1.4], vertical_alignment="center")
+            with input_col:
+                st.text_input(
+                    "Response",
+                    key="user_text_input",
+                    on_change=process_text_input,
+                    label_visibility="collapsed",
+                    placeholder="Type a reply and press Enter...",
+                )
+            with mic_col:
+                st.markdown(
+                    """
+                    <div class="voice-control">
+                        <div class="voice-control-title">Voice mode</div>
+                        <div class="voice-control-caption">Click the mic, speak clearly, then click again.</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                audio_bytes = audio_recorder(
+                    text="",
+                    icon_name="microphone",
+                    icon_size="3x",
+                    neutral_color="#153f44",
+                    recording_color="#e25b4c",
+                    energy_threshold=0.003,
+                    pause_threshold=1.1,
+                    sample_rate=44100,
+                    key="voice_reply_recorder",
+                )
 
         if audio_bytes:
             audio_hash = hashlib.sha256(audio_bytes).hexdigest()
