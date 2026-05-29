@@ -1,24 +1,19 @@
-# voice_generator.py
-
-import os
-from dotenv import load_dotenv
+from app_config import secret_value
 from elevenlabs.client import ElevenLabs
-from elevenlabs import stream
 
-# Load your .env vault
-load_dotenv()
-
-# Initialize ElevenLabs client
-client = ElevenLabs(
-    api_key=os.getenv("ELEVENLABS_API_KEY")
-)
 
 def text_to_speech_bytes(text):
     """
     Takes text, sends it to ElevenLabs, and returns raw MP3 bytes 
     so Streamlit can play it directly in the browser.
     """
+    api_key = secret_value("ELEVENLABS_API_KEY")
+    if not api_key:
+        print("Voice Generation Error: ELEVENLABS_API_KEY is not configured.")
+        return None
+
     try:
+        client = ElevenLabs(api_key=api_key)
         # We use .convert instead of .stream here
         audio_generator = client.text_to_speech.convert(
             text=text,

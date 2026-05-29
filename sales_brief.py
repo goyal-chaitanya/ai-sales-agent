@@ -1,21 +1,9 @@
-# sales_brief.py
-
-import os
-from dotenv import load_dotenv
 from openai import OpenAI
 
+from app_config import secret_value
 
 # 1. Import the scraper function we built earlier
 from scraper import scrape_website_text
-
-# 2. Load the hidden API keys from your .env vault
-load_dotenv()
-
-# 3. Initialize the OpenAI client (it automatically finds the key in your .env file)
-client = OpenAI(
-    api_key = os.getenv("GROQ_API_KEY"),
-    base_url= "https://api.groq.com/openai/v1"
-)
 
 def generate_sales_brief(url):
     """
@@ -30,9 +18,16 @@ def generate_sales_brief(url):
         return website_text
 
     print("Analyzing data with OpenAI...")
+    api_key = secret_value("GROQ_API_KEY")
+    if not api_key:
+        return "Error connecting to OpenAI: GROQ_API_KEY is not configured."
     
     # Step B: Pass the text to OpenAI with specific instructions
     try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1"
+        )
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant", # Fast, smart, and very cheap model
             messages=[

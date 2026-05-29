@@ -1,11 +1,9 @@
 # audio_processor.py
 
 import os
-from dotenv import load_dotenv
 from openai import OpenAI
 
-# Load your .env vault
-load_dotenv()
+from app_config import secret_value
 
 # --- OPTION A: If you want to use OpenAI (Requires paid credits) ---
 # client = OpenAI() 
@@ -13,10 +11,6 @@ load_dotenv()
 
 # --- OPTION B: If you want to use Groq (Free Tier) ---
 # Groq hosts an incredibly fast version of Whisper completely free
-client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
-)
 WHISPER_MODEL = "whisper-large-v3" 
 
 
@@ -28,7 +22,15 @@ def transcribe_audio(file_path):
     if not os.path.exists(file_path):
         return f"Error: The file {file_path} does not exist."
 
+    api_key = secret_value("GROQ_API_KEY")
+    if not api_key:
+        return "Transcription Error: GROQ_API_KEY is not configured."
+
     try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1"
+        )
         # Open the audio file in 'rb' (read-binary) mode
         with open(file_path, "rb") as audio_file:
             print(f"Transcribing {file_path} using Whisper...")

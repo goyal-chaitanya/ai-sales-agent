@@ -257,6 +257,31 @@ button[kind="secondary"] {
     margin: 18px 0;
 }
 
+.voice-input-card {
+    border: 1px solid rgba(32, 33, 36, 0.10);
+    background: rgba(255, 255, 255, 0.86);
+    border-radius: 8px;
+    padding: 12px 14px 6px;
+    margin-top: 8px;
+}
+
+.voice-input-title {
+    color: #17191b;
+    font-size: 0.92rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.voice-input-caption {
+    color: #69746e;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.stAudio {
+    margin-top: 8px;
+}
+
 @media (max-width: 760px) {
     .topbar {
         display: block;
@@ -526,6 +551,17 @@ def autoplay_audio(audio_bytes: bytes) -> None:
     )
 
 
+def render_assistant_audio(audio_bytes: bytes | None, should_autoplay: bool) -> None:
+    if not audio_bytes:
+        st.caption("Voice unavailable. Check ELEVENLABS_API_KEY in Streamlit secrets.")
+        return
+
+    if should_autoplay:
+        autoplay_audio(audio_bytes)
+
+    st.audio(audio_bytes, format="audio/mp3")
+
+
 def build_conversation(brief: str, segment: str, offer: str, tone: str) -> LLMChain:
     llm = ChatGroq(temperature=0.72, model_name="llama-3.1-8b-instant")
     prompt = ChatPromptTemplate.from_messages(
@@ -753,11 +789,11 @@ def render_brief_and_chat() -> None:
             for msg in st.session_state.messages:
                 with st.chat_message(msg["role"]):
                     st.write(msg["content"])
-                    if msg.get("audio") and msg.get("autoplay"):
-                        autoplay_audio(msg["audio"])
+                    if msg["role"] == "assistant":
+                        render_assistant_audio(msg.get("audio"), msg.get("autoplay", False))
                         msg["autoplay"] = False
 
-        input_col, mic_col = st.columns([5, 1])
+        input_col, mic_col = st.columns([4.2, 1.25], vertical_alignment="top")
         with input_col:
             st.text_input(
                 "Response",
@@ -767,7 +803,25 @@ def render_brief_and_chat() -> None:
                 placeholder="Type a prospect reply and press Enter...",
             )
         with mic_col:
-            audio_bytes = audio_recorder(text="", icon_size="2x")
+            st.markdown(
+                """
+                <div class="voice-input-card">
+                    <div class="voice-input-title">Voice reply</div>
+                    <div class="voice-input-caption">Tap, speak, tap again.</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            audio_bytes = audio_recorder(
+                text="Record",
+                icon_size="3x",
+                neutral_color="#236f79",
+                recording_color="#e25b4c",
+                energy_threshold=0.003,
+                pause_threshold=1.1,
+                sample_rate=44100,
+                key="voice_reply_recorder",
+            )
 
         if audio_bytes:
             audio_hash = hashlib.sha256(audio_bytes).hexdigest()

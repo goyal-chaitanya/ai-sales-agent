@@ -4,45 +4,17 @@ from typing import Any
 from urllib.parse import urlencode
 
 import requests
-from dotenv import find_dotenv, load_dotenv
 
-load_dotenv(find_dotenv(usecwd=True))
-
-
-def _clean_supabase_url(value: str) -> str:
-    url = value.strip().rstrip("/")
-    for suffix in ("/rest/v1", "/auth/v1"):
-        if url.endswith(suffix):
-            return url[: -len(suffix)]
-    return url
+from app_config import clean_supabase_url, secret_value
 
 
-def _secret_value(*names: str) -> str:
-    for name in names:
-        value = os.getenv(name)
-        if value:
-            return value
-
-    try:
-        import streamlit as st
-
-        for name in names:
-            value = st.secrets.get(name)
-            if value:
-                return str(value)
-    except Exception:
-        pass
-
-    return ""
-
-
-SUPABASE_URL = _clean_supabase_url(
-    _secret_value("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL")
+SUPABASE_URL = clean_supabase_url(
+    secret_value("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL")
 )
 SUPABASE_ANON_KEY = (
-    _secret_value("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    secret_value("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY")
 ).strip()
-APP_BASE_URL = _secret_value("APP_BASE_URL") or "http://localhost:8501"
+APP_BASE_URL = secret_value("APP_BASE_URL") or "http://localhost:8501"
 
 
 def is_configured() -> bool:
