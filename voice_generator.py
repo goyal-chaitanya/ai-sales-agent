@@ -1,6 +1,6 @@
 from app_config import secret_value
 from elevenlabs.client import ElevenLabs
-
+import streamlit as st
 
 def text_to_speech_bytes(text):
     """
@@ -13,7 +13,7 @@ def text_to_speech_bytes(text):
         return None
 
     try:
-        client = ElevenLabs(api_key=api_key)
+        client = ElevenLabs(api_key=st.secrets["ELEVENLABS_API_KEY"])
         # We use .convert instead of .stream here
         audio_generator = client.text_to_speech.convert(
             text=text,
